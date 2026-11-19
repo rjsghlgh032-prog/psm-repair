@@ -181,6 +181,1215 @@
 
       <div id="dtcOcrLoading" class="hidden py-8 text-center">
         <i class="fa-solid fa-spinner fa-spin text-2xl text-blue-600 mb-2"></i>
+        <p class="text-xs font-bold text-slate-700">고장코드와 내용을 빠르게 추출하고 있습니다...</p>
+      </div>
+
+      <div id="dtcOcrResultArea" class="hidden space-y-3">
+        <div class="flex items-center justify-between bg-emerald-50 border border-emerald-200 px-3 py-2 rounded-xl text-xs">
+          <span class="font-bold text-emerald-800"><i class="fa-solid fa-circle-check mr-1"></i>추출 완료! 내용을 확인/수정한 뒤 저장하세요.</span>
+          <button onclick="addEmptyExtractedRow()" class="text-blue-700 font-bold underline">+ 행 추가</button>
+        </div>
+
+        <div id="extractedDtcList" class="space-y-2 max-h-64 overflow-y-auto pr-1"></div>
+
+        <div class="pt-3 border-t border-slate-200 flex justify-end gap-2">
+          <button onclick="closeDtcOcrModal()" class="px-4 py-2 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700">취소</button>
+          <button onclick="confirmSaveExtractedDtcs()" class="px-4 py-2 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white">선택한 코드 일괄 저장</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 직원 계정 발급 및 권한 관리 모달 -->
+  <div id="userModal" class="hidden fixed inset-0 bg-slate-900/60 z-40 flex items-center justify-center p-3">
+    <div class="bg-white rounded-2xl max-w-xl w-full p-5 shadow-xl max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-200">
+        <div>
+          <h2 class="text-base font-black text-slate-900"><i class="fa-solid fa-users-gear text-amber-600 mr-1.5"></i>직원 계정 발급 및 권한 관리</h2>
+          <p class="text-xs text-slate-500">직원별 로그인 아이디, 비밀번호, 수정/조회 권한을 설정합니다.</p>
+        </div>
+        <button onclick="closeUserModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 mb-4 text-xs">
+        <div class="font-bold text-slate-800 mb-2.5" id="userFormTitle">+ 새 직원 계정 만들기</div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div>
+            <label class="block text-slate-600 font-semibold mb-1">로그인 아이디 *</label>
+            <input id="uId" type="text" placeholder="예: lee01" class="w-full border border-slate-300 rounded-lg px-2.5 py-2 font-bold bg-white" />
+          </div>
+          <div>
+            <label class="block text-slate-600 font-semibold mb-1">비밀번호 *</label>
+            <input id="uPw" type="text" placeholder="예: 1234" class="w-full border border-slate-300 rounded-lg px-2.5 py-2 font-bold bg-white" />
+          </div>
+          <div>
+            <label class="block text-slate-600 font-semibold mb-1">표시 이름(직급) *</label>
+            <input id="uName" type="text" placeholder="예: 이실장" class="w-full border border-slate-300 rounded-lg px-2.5 py-2 font-bold bg-white" />
+          </div>
+          <div>
+            <label class="block text-slate-600 font-semibold mb-1">사용 권한 *</label>
+            <select id="uRole" class="w-full border border-slate-300 rounded-lg px-2 py-2 font-bold bg-white">
+              <option value="edit">쓰기/수정 가능</option>
+              <option value="view">보기 전용</option>
+              <option value="admin">전체 관리자</option>
+            </select>
+          </div>
+        </div>
+        <div class="mt-3 flex justify-end gap-2">
+          <button onclick="resetUserForm()" class="px-3 py-1.5 rounded-lg bg-slate-200 text-slate-700 font-semibold">입력 초기화</button>
+          <button onclick="saveUserAccount()" class="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold">계정 저장</button>
+        </div>
+      </div>
+
+      <div class="text-xs font-bold text-slate-700 mb-2">등록된 직원 계정 목록</div>
+      <div id="userAccountList" class="space-y-2 max-h-60 overflow-y-auto"></div>
+    </div>
+  </div>
+
+  <!-- 신규/수정 차량 모달 -->
+  <div id="caseModal" class="hidden fixed inset-0 bg-slate-900/60 z-40 flex items-center justify-center p-3">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-5 shadow-xl max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center mb-4">
+        <h2 id="caseModalTitle" class="text-base font-bold text-slate-900">신규 수리 차량 등록</h2>
+        <button onclick="closeCaseModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <div class="bg-blue-50 text-blue-800 px-3 py-2 rounded-lg font-semibold flex items-center justify-between">
+          <span>작성자:</span>
+          <span id="modalCaseAuthor" class="font-black"></span>
+        </div>
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">차량번호 *</label>
+            <input id="inputPlate" type="text" placeholder="예: 158러 4920" class="w-full border border-slate-300 rounded-lg px-3 py-2 font-bold" />
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">진행 상태</label>
+            <select id="inputStatus" class="w-full border border-slate-300 rounded-lg px-3 py-2 font-semibold">
+              <option value="진단중">진단중</option>
+              <option value="수리중">수리중</option>
+              <option value="해결완료">해결완료</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">차대번호 (VIN 17자리)</label>
+          <input id="inputVin" type="text" maxlength="17" placeholder="예: WP1ZZZ9YZKDA48291" class="w-full border border-slate-300 rounded-lg px-3 py-2 uppercase font-mono" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">입고 증상 및 문제 현상 *</label>
+          <textarea id="inputSymptom" rows="3" placeholder="고객 호소 증상, 재현 조건, 타 업체 작업 이력 등" class="w-full border border-slate-300 rounded-lg px-3 py-2"></textarea>
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">최종 해결 요약 (차주 안내 핵심)</label>
+          <textarea id="inputResolution" rows="3" placeholder="근본 원인 규명 및 최종 조치 내역" class="w-full border border-slate-300 rounded-lg px-3 py-2"></textarea>
+        </div>
+      </div>
+      <div class="mt-5 flex justify-end gap-2">
+        <button onclick="closeCaseModal()" class="px-4 py-2 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700">취소</button>
+        <button onclick="saveCase()" class="px-4 py-2 rounded-lg text-xs font-semibold bg-blue-600 text-white hover:bg-blue-500">서버에 저장</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 해결 과정(타임라인) 추가/수정 모달 -->
+  <div id="stepModal" class="hidden fixed inset-0 bg-slate-900/60 z-40 flex items-center justify-center p-3">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-5 shadow-xl max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center mb-4">
+        <h2 id="stepModalTitle" class="text-base font-bold text-slate-900">해결 과정 추가</h2>
+        <button onclick="closeStepModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <div class="bg-blue-50 text-blue-800 px-3 py-2 rounded-lg font-semibold flex items-center justify-between">
+          <span>과정 작성자:</span>
+          <span id="modalStepAuthor" class="font-black"></span>
+        </div>
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">작업 일자</label>
+            <input id="stepDate" type="date" class="w-full border border-slate-300 rounded-lg px-3 py-2" />
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">작업 구분</label>
+            <select id="stepTag" class="w-full border border-slate-300 rounded-lg px-3 py-2 font-semibold">
+              <option value="정밀점검/계측">정밀점검/계측</option>
+              <option value="가설검증/테스트">가설검증/테스트</option>
+              <option value="부품교환">부품교환</option>
+              <option value="배선/코딩수정">배선/코딩수정</option>
+              <option value="최종시운전">최종시운전</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">과정 제목 *</label>
+          <input id="stepTitle" type="text" placeholder="예: 진공 펌프 부압 실측 및 라인 점검" class="w-full border border-slate-300 rounded-lg px-3 py-2 font-semibold" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">상세 점검 내용 및 계측 수치 *</label>
+          <textarea id="stepDetail" rows="3" placeholder="실측 데이터, 정상 기준치 비교, 파형/압력 결과 등" class="w-full border border-slate-300 rounded-lg px-3 py-2"></textarea>
+        </div>
+        <div class="flex items-center gap-4 pt-1">
+          <label class="flex items-center gap-1.5 font-semibold text-amber-700 cursor-pointer">
+            <input id="stepIsRoot" type="checkbox" class="rounded text-amber-600" /> 결정적 원인 규명
+          </label>
+          <label class="flex items-center gap-1.5 font-semibold text-emerald-700 cursor-pointer">
+            <input id="stepIncludeReport" type="checkbox" checked class="rounded text-emerald-600" /> 고객 보고서 포함
+          </label>
+        </div>
+        <div class="border-t border-slate-200 pt-3">
+          <div class="flex justify-between items-center mb-2">
+            <label class="font-semibold text-slate-700">증빙 및 계측 사진 첨부</label>
+            <span class="text-[11px] font-bold text-blue-600"><i class="fa-solid fa-paste mr-0.5"></i>PC 캡처 후 Ctrl + V 가능</span>
+          </div>
+          <div class="flex gap-2 mb-2">
+            <label class="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl py-2.5 px-3 text-center font-bold cursor-pointer">
+              <i class="fa-solid fa-camera mr-1"></i> 카메라 바로 촬영
+              <input type="file" accept="image/*" capture="environment" onchange="handleImageUpload(event)" class="hidden" />
+            </label>
+            <label class="flex-1 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl py-2.5 px-3 text-center font-bold cursor-pointer">
+              <i class="fa-solid fa-images mr-1"></i> 사진첩 선택
+              <input type="file" accept="image/*" multiple onchange="handleImageUpload(event)" class="hidden" />
+            </label>
+          </div>
+          <div id="stepPhotoPreview" class="grid grid-cols-3 gap-2"></div>
+        </div>
+      </div>
+      <div class="mt-5 flex justify-end gap-2">
+        <button onclick="closeStepModal()" class="px-4 py-2 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700">취소</button>
+        <button onclick="saveStep()" class="px-4 py-2 rounded-lg text-xs font-semibold bg-blue-600 text-white hover:bg-blue-500">과정 저장</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDv_pkLZZMDvYoPUrATQZNnB-6sMJtGHKU",
+      authDomain: "psm-repair.firebaseapp.com",
+      projectId: "psm-repair",
+      storageBucket: "psm-repair.firebasestorage.app",
+      messagingSenderId: "900169277438",
+      appId: "1:900169277438:web:bb2c9391d86c705a146aaf"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const casesCol = collection(db, "repair_cases");
+    const usersCol = collection(db, "staff_users");
+    const configDocRef = doc(db, "app_settings", "ai_config");
+
+    let cases = [];
+    let staffUsers = [];
+    let sharedGeminiApiKey = "";
+    let currentUser = null;
+    let selectedId = null;
+    let currentFilter = "ALL";
+    let editingCaseId = null;
+    let editingStepId = null;
+    let tempStepPhotos = [];
+    let extractedDtcs = [];
+
+    function canEdit() {
+      return currentUser && (currentUser.role === "admin" || currentUser.role === "edit");
+    }
+    function isAdmin() {
+      return currentUser && currentUser.role === "admin";
+    }
+    function roleLabel(role) {
+      if (role === "admin") return "관리자";
+      if (role === "edit") return "쓰기/수정";
+      return "보기전용";
+    }
+
+    window.addEventListener("paste", (e) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      const imageFiles = [];
+      for (const item of items) {
+        if (item.type.startsWith("image/")) {
+          const file = item.getAsFile();
+          if (file) imageFiles.push(file);
+        }
+      }
+      if (imageFiles.length === 0) return;
+
+      const dtcModalOpen = !document.getElementById("dtcOcrModal").classList.contains("hidden");
+      if (dtcModalOpen) {
+        e.preventDefault();
+        analyzeDtcImageFile(imageFiles[0]);
+        return;
+      }
+
+      const stepModalOpen = !document.getElementById("stepModal").classList.contains("hidden");
+      if (stepModalOpen) {
+        e.preventDefault();
+        appendCompressedStepPhotos(imageFiles);
+      }
+    });
+
+    onSnapshot(configDocRef, (snap) => {
+      if (snap.exists()) {
+        sharedGeminiApiKey = snap.data().geminiApiKey || "";
+      }
+    });
+
+    window.openAiKeyModal = () => {
+      if (!isAdmin()) return;
+      document.getElementById("geminiApiKeyInput").value = sharedGeminiApiKey;
+      document.getElementById("aiKeyModal").classList.remove("hidden");
+    };
+    window.closeAiKeyModal = () => document.getElementById("aiKeyModal").classList.add("hidden");
+
+    window.saveGeminiApiKey = async () => {
+      if (!isAdmin()) return;
+      const key = document.getElementById("geminiApiKeyInput").value.trim();
+      await setDoc(configDocRef, { geminiApiKey: key });
+      closeAiKeyModal();
+      alert("AI API 키가 저장되었습니다.");
+    };
+
+    onSnapshot(usersCol, async (snapshot) => {
+      staffUsers = snapshot.docs.map(d => d.data());
+      if (staffUsers.length === 0) {
+        const defaultAdmin = { id: "admin", pw: "1234", name: "이건호 팀장", role: "admin" };
+        await setDoc(doc(db, "staff_users", "admin"), defaultAdmin);
+        return;
+      }
+      document.getElementById("loginStatusMsg").textContent = "로그인 준비 완료";
+      document.getElementById("loginStatusMsg").className = "text-[11px] text-emerald-600 font-semibold";
+
+      const savedId = localStorage.getItem("psm_logged_user_id");
+      if (savedId) {
+        const found = staffUsers.find(u => u.id === savedId);
+        if (found) {
+          applyLoggedInUser(found);
+        } else {
+          logoutUser();
+        }
+      }
+      renderUserList();
+    });
+
+    function applyLoggedInUser(user) {
+      currentUser = user;
+      localStorage.setItem("psm_logged_user_id", user.id);
+      document.getElementById("loginOverlay").classList.add("hidden");
+      document.getElementById("currentUserName").textContent = user.name;
+      document.getElementById("currentUserRoleBadge").textContent = roleLabel(user.role);
+
+      if (isAdmin()) {
+        document.getElementById("btnManageUsers").classList.remove("hidden");
+        document.getElementById("btnAiSettings").classList.remove("hidden");
+      } else {
+        document.getElementById("btnManageUsers").classList.add("hidden");
+        document.getElementById("btnAiSettings").classList.add("hidden");
+      }
+      if (canEdit()) {
+        document.getElementById("btnNewCase").classList.remove("hidden");
+      } else {
+        document.getElementById("btnNewCase").classList.add("hidden");
+      }
+      renderCaseList();
+      renderDetail();
+    }
+
+    window.handleLogin = () => {
+      const id = (document.getElementById("loginIdInput").value || "").trim();
+      const pw = (document.getElementById("loginPwInput").value || "").trim();
+      if (!id || !pw) return alert("아이디와 비밀번호를 모두 입력해 주세요.");
+      if (staffUsers.length === 0) {
+        return alert("서버 계정 목록을 아직 불러오는 중입니다. 잠시 후 다시 눌러주세요.");
+      }
+      const found = staffUsers.find(u => u.id === id && u.pw === pw);
+      if (!found) {
+        return alert("아이디 또는 비밀번호가 일치하지 않습니다.");
+      }
+      document.getElementById("loginPwInput").value = "";
+      applyLoggedInUser(found);
+    };
+
+    window.logoutUser = () => {
+      currentUser = null;
+      localStorage.removeItem("psm_logged_user_id");
+      document.getElementById("loginOverlay").classList.remove("hidden");
+    };
+
+    window.openUserModal = () => {
+      if (!isAdmin()) return;
+      resetUserForm();
+      renderUserList();
+      document.getElementById("userModal").classList.remove("hidden");
+    };
+    window.closeUserModal = () => document.getElementById("userModal").classList.add("hidden");
+
+    window.resetUserForm = () => {
+      document.getElementById("userFormTitle").textContent = "+ 새 직원 계정 만들기";
+      document.getElementById("uId").value = "";
+      document.getElementById("uId").disabled = false;
+      document.getElementById("uPw").value = "";
+      document.getElementById("uName").value = "";
+      document.getElementById("uRole").value = "edit";
+    };
+
+    window.editUserAccount = (id) => {
+      const u = staffUsers.find(item => item.id === id);
+      if (!u) return;
+      document.getElementById("userFormTitle").textContent = `계정 수정 (${u.id})`;
+      document.getElementById("uId").value = u.id;
+      document.getElementById("uId").disabled = true;
+      document.getElementById("uPw").value = u.pw;
+      document.getElementById("uName").value = u.name;
+      document.getElementById("uRole").value = u.role;
+    };
+
+    window.saveUserAccount = async () => {
+      if (!isAdmin()) return;
+      const id = document.getElementById("uId").value.trim();
+      const pw = document.getElementById("uPw").value.trim();
+      const name = document.getElementById("uName").value.trim();
+      const role = document.getElementById("uRole").value;
+      if (!id || !pw || !name) return alert("아이디, 비밀번호, 표시 이름을 모두 입력해 주세요.");
+      await setDoc(doc(db, "staff_users", id), { id, pw, name, role });
+      resetUserForm();
+      alert(`'${name} (${id})' 계정이 저장되었습니다.`);
+    };
+
+    window.deleteUserAccount = async (id) => {
+      if (!isAdmin()) return;
+      if (id === currentUser.id) return alert("현재 로그인 중인 본인 계정은 삭제할 수 없습니다.");
+      if (!confirm(`'${id}' 계정을 정말 삭제하시겠습니까?`)) return;
+      await deleteDoc(doc(db, "staff_users", id));
+    };
+
+    function renderUserList() {
+      const el = document.getElementById("userAccountList");
+      if (!el) return;
+      el.innerHTML = staffUsers.map(u => {
+        const badgeClass = u.role === "admin" ? "bg-amber-100 text-amber-800" : (u.role === "edit" ? "bg-blue-100 text-blue-800" : "bg-slate-200 text-slate-700");
+        return `
+          <div class="flex items-center justify-between p-2.5 rounded-xl border border-slate-200 bg-white text-xs">
+            <div>
+              <div class="flex items-center gap-1.5">
+                <span class="font-black text-slate-900">${u.name}</span>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${badgeClass}">${roleLabel(u.role)}</span>
+              </div>
+              <div class="text-[11px] text-slate-500 mt-0.5 font-mono">ID: <strong>${u.id}</strong> / PW: <strong>${u.pw}</strong></div>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <button onclick="editUserAccount('${u.id}')" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-blue-100 text-slate-700 hover:text-blue-700 font-semibold">수정</button>
+              <button onclick="deleteUserAccount('${u.id}')" class="px-2.5 py-1 rounded bg-rose-50 hover:bg-rose-100 text-rose-600 font-semibold">삭제</button>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    const q = query(casesCol, orderBy("updatedAt", "desc"));
+    onSnapshot(q, (snapshot) => {
+      cases = snapshot.docs.map(d => d.data());
+      document.getElementById("syncDot").className = "inline-block w-2 h-2 rounded-full bg-emerald-400";
+      document.getElementById("syncText").textContent = "실시간 다중 기기 동기화 연결됨";
+      if (!selectedId && cases.length > 0) selectedId = cases[0].id;
+      renderCaseList();
+      renderDetail();
+    }, (err) => {
+      document.getElementById("syncDot").className = "inline-block w-2 h-2 rounded-full bg-rose-500";
+      document.getElementById("syncText").textContent = "서버 연결 오류";
+      console.error(err);
+    });
+
+    async function persistCase(caseObj) {
+      if (!canEdit()) return alert("보기 전용 계정은 수정할 수 없습니다.");
+      caseObj.updatedAt = Date.now();
+      await setDoc(doc(db, "repair_cases", caseObj.id), caseObj);
+    }
+
+    window.setFilter = (f) => {
+      currentFilter = f;
+      document.querySelectorAll(".filter-btn").forEach(btn => {
+        btn.className = "filter-btn px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600";
+      });
+      document.getElementById("filter-" + f).className = "filter-btn px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-900 text-white";
+      renderCaseList();
+    };
+
+    window.renderCaseList = () => {
+      const kw = document.getElementById("searchInput").value.trim().toLowerCase();
+      const filtered = cases.filter(c => {
+        if (currentFilter !== "ALL" && c.status !== currentFilter) return false;
+        if (!kw) return true;
+        const dtcText = (c.dtcs || []).map(d => d.code + " " + d.desc).join(" ").toLowerCase();
+        const stepAuthors = (c.steps || []).map(s => s.author || "").join(" ").toLowerCase();
+        return (c.plate || "").toLowerCase().includes(kw) ||
+               (c.vin || "").toLowerCase().includes(kw) ||
+               dtcText.includes(kw) ||
+               (c.symptom || "").toLowerCase().includes(kw) ||
+               (c.createdBy || "").toLowerCase().includes(kw) ||
+               stepAuthors.includes(kw);
+      });
+
+      const listEl = document.getElementById("caseList");
+      if (filtered.length === 0) {
+        listEl.innerHTML = `<div class="text-center text-xs text-slate-400 py-10">검색된 차량이 없습니다.</div>`;
+        return;
+      }
+
+      listEl.innerHTML = filtered.map(c => {
+        const active = c.id === selectedId ? "border-blue-500 bg-blue-50/50" : "border-slate-200 hover:bg-slate-50";
+        const badgeColor = c.status === "해결완료" ? "bg-emerald-100 text-emerald-700" : (c.status === "수리중" ? "bg-amber-100 text-amber-700" : "bg-rose-100 text-rose-700");
+        return `
+          <div onclick="selectCase('${c.id}')" class="p-3 rounded-xl border ${active} cursor-pointer transition">
+            <div class="flex justify-between items-center mb-1">
+              <span class="font-black text-sm text-slate-900">${c.plate}</span>
+              <span class="text-[11px] font-bold px-2 py-0.5 rounded-full ${badgeColor}">${c.status}</span>
+            </div>
+            <div class="flex justify-between items-center text-[11px] text-slate-400 mb-1">
+              <span class="font-mono">${c.vin || "VIN 미입력"}</span>
+              ${c.createdBy ? `<span class="text-slate-500 font-semibold"><i class="fa-solid fa-user-pen mr-0.5"></i>${c.createdBy}</span>` : ""}
+            </div>
+            <p class="text-xs text-slate-600 line-clamp-2">${c.symptom || ""}</p>
+            <div class="mt-2 flex justify-between items-center text-[11px] text-slate-400">
+              <span>${(c.dtcs || []).map(d => d.code).join(", ") || "코드 없음"}</span>
+              <span>과정 ${(c.steps || []).length}건</span>
+            </div>
+          </div>
+        `;
+      }).join("");
+    };
+
+    window.selectCase = (id) => {
+      selectedId = id;
+      renderCaseList();
+      renderDetail();
+    };
+
+    window.renderDetail = () => {
+      const panel = document.getElementById("detailPanel");
+      const c = cases.find(item => item.id === selectedId);
+      if (!c) {
+        panel.innerHTML = `<div class="h-full flex flex-col items-center justify-center text-slate-400 py-16"><p class="text-sm">좌측에서 차량을 선택해 주세요.</p></div>`;
+        return;
+      }
+
+      const editable = canEdit();
+
+      const dtcHtml = (c.dtcs || []).map((d, idx) => `
+        <span class="inline-flex items-center gap-1.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold px-2.5 py-1 rounded-lg">
+          <span>${d.code}</span>
+          <span class="font-normal text-rose-600">${d.desc}</span>
+          ${editable ? `<button onclick="removeDtc(${idx})" class="text-rose-400 hover:text-rose-700 ml-1">&times;</button>` : ""}
+        </span>
+      `).join("");
+
+      const stepsHtml = (c.steps || []).map((s, idx) => {
+        const photosHtml = (s.photos || []).map(src => `
+          <img src="${src}" onclick="openLightbox('${src}')" class="w-20 h-20 object-cover rounded-lg border border-slate-200 cursor-zoom-in" />
+        `).join("");
+        return `
+          <div class="border border-slate-200 rounded-xl p-3.5 bg-slate-50/50">
+            <div class="flex flex-wrap justify-between items-center gap-2 mb-1.5">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="text-xs font-bold text-slate-500">${s.date || ""}</span>
+                <span class="text-[11px] font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded">${s.tag}</span>
+                ${s.author ? `<span class="text-[11px] font-bold bg-slate-200 text-slate-700 px-2 py-0.5 rounded"><i class="fa-solid fa-user-pen mr-1"></i>작성: ${s.author}</span>` : ""}
+                ${s.isRoot ? `<span class="text-[11px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded"><i class="fa-solid fa-key mr-1"></i>결정적 원인 규명</span>` : ""}
+              </div>
+              ${editable ? `
+              <div class="flex items-center gap-2 text-xs text-slate-400">
+                <button onclick="openEditStepModal('${s.id}')" class="hover:text-blue-600"><i class="fa-solid fa-pen"></i></button>
+                <button onclick="deleteStep('${s.id}')" class="hover:text-rose-600"><i class="fa-solid fa-trash"></i></button>
+              </div>` : ""}
+            </div>
+            <h4 class="text-sm font-bold text-slate-900 mb-1">${idx + 1}. ${s.title}</h4>
+            <p class="text-xs text-slate-600 whitespace-pre-line leading-relaxed">${s.detail}</p>
+            ${photosHtml ? `<div class="mt-2.5 flex flex-wrap gap-2">${photosHtml}</div>` : ""}
+          </div>
+        `;
+      }).join("");
+
+      panel.innerHTML = `
+        <div class="flex flex-wrap justify-between items-start gap-3 pb-4 border-b border-slate-200">
+          <div>
+            <div class="flex items-center gap-2.5 flex-wrap">
+              <h2 class="text-xl sm:text-2xl font-black text-slate-900">${c.plate}</h2>
+              ${editable ? `
+              <select onchange="quickStatusChange(this.value)" class="text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full px-3 py-1">
+                <option value="진단중" ${c.status === "진단중" ? "selected" : ""}>진단중</option>
+                <option value="수리중" ${c.status === "수리중" ? "selected" : ""}>수리중</option>
+                <option value="해결완료" ${c.status === "해결완료" ? "selected" : ""}>해결완료</option>
+              </select>` : `<span class="text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full px-3 py-1">${c.status}</span>`}
+              ${c.createdBy ? `<span class="text-xs font-bold bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full"><i class="fa-solid fa-user-check mr-1 text-blue-600"></i>최초 등록: ${c.createdBy}</span>` : ""}
+            </div>
+            <p class="text-xs font-mono text-slate-500 mt-1">VIN: ${c.vin || "미입력"}</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="printCustomerReport()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-2 rounded-lg flex items-center gap-1.5">
+              <i class="fa-solid fa-print"></i> 차주 안내 보고서
+            </button>
+            ${editable ? `
+            <button onclick="openEditCaseModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-2.5 py-2 rounded-lg">
+              <i class="fa-solid fa-pen"></i>
+            </button>
+            <button onclick="deleteCurrentCase()" class="bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold px-2.5 py-2 rounded-lg">
+              <i class="fa-solid fa-trash"></i>
+            </button>` : ""}
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 my-4">
+          <div class="bg-amber-50/60 border border-amber-200 rounded-xl p-3.5">
+            <h3 class="text-xs font-bold text-amber-800 mb-1"><i class="fa-solid fa-triangle-exclamation mr-1"></i>입고 증상 및 문제 현상</h3>
+            <p class="text-xs text-slate-700 whitespace-pre-line leading-relaxed">${c.symptom || "-"}</p>
+          </div>
+          <div class="bg-emerald-50/60 border border-emerald-200 rounded-xl p-3.5">
+            <h3 class="text-xs font-bold text-emerald-800 mb-1"><i class="fa-solid fa-circle-check mr-1"></i>최종 해결 요약 (차주 안내 핵심)</h3>
+            <p class="text-xs text-slate-700 whitespace-pre-line leading-relaxed">${c.resolution || "진단 및 수리 진행 중"}</p>
+          </div>
+        </div>
+
+        <div class="mb-5">
+          <div class="flex flex-wrap justify-between items-center gap-2 mb-2">
+            <h3 class="text-xs font-bold text-slate-700">검출된 진단 코드 (DTC)</h3>
+            ${editable ? `
+            <div class="flex items-center gap-2">
+              <button onclick="openDtcOcrModal()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold px-2.5 py-1 rounded-lg flex items-center gap-1">
+                <i class="fa-solid fa-camera"></i> 사진/캡처로 코드 추출
+              </button>
+              <button onclick="addDtcPrompt()" class="text-xs font-bold text-blue-600 hover:underline">+ 수동 추가</button>
+            </div>` : ""}
+          </div>
+          <div class="flex flex-wrap gap-1.5">${dtcHtml || `<span class="text-xs text-slate-400">등록된 고장코드가 없습니다.</span>`}</div>
+        </div>
+
+        <div>
+          <div class="flex justify-between items-center mb-3">
+            <h3 class="text-sm font-bold text-slate-900">해결 과정 및 일자별 작업 타임라인</h3>
+            ${editable ? `<button onclick="openNewStepModal()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg">+ 해결 과정 추가</button>` : ""}
+          </div>
+          <div class="space-y-2.5">${stepsHtml || `<div class="text-center text-xs text-slate-400 py-8 border border-dashed border-slate-200 rounded-xl">아직 등록된 해결 과정이 없습니다.</div>`}</div>
+        </div>
+      `;
+    };
+
+    window.openDtcOcrModal = () => {
+      if (!canEdit()) return;
+      if (!sharedGeminiApiKey) {
+        if (isAdmin()) {
+          alert("먼저 상단의 보라색 [AI 설정] 버튼을 눌러 Gemini API 키를 1회 등록해 주세요.");
+          openAiKeyModal();
+        } else {
+          alert("관리자가 상단 [AI 설정]에서 API 키를 등록한 후 사용할 수 있습니다.");
+        }
+        return;
+      }
+      extractedDtcs = [];
+      document.getElementById("dtcOcrLoading").classList.add("hidden");
+      document.getElementById("dtcOcrResultArea").classList.add("hidden");
+      document.getElementById("dtcOcrModal").classList.remove("hidden");
+    };
+
+    window.closeDtcOcrModal = () => document.getElementById("dtcOcrModal").classList.add("hidden");
+
+    window.processDtcImage = (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      analyzeDtcImageFile(file);
+      e.target.value = "";
+    };
+
+    async function fetchWithTimeout(url, options, timeoutMs = 35000) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        return await fetch(url, { ...options, signal: controller.signal });
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    function extractDtcsResilient(rawText) {
+      const cleaned = String(rawText || "").replace(/```json|```/gi, "").trim();
+
+      // 1차 시도: 완전한 JSON 배열 파싱
+      try {
+        const match = cleaned.match(/\[[\s\S]*\]/);
+        const arr = JSON.parse(match ? match[0] : cleaned);
+        if (Array.isArray(arr) && arr.length > 0) {
+          return arr
+            .map(item => ({
+              checked: true,
+              code: String(item.code || "").trim().toUpperCase(),
+              desc: String(item.desc || "").trim()
+            }))
+            .filter(item => item.code);
+        }
+      } catch (_) {
+        // JSON이 중간에 끊긴 경우 아래 복구 로직으로 진행
+      }
+
+      // 2차 시도: 잘린 JSON 객체들에서 "code"와 "desc" 쌍 복구
+      const recovered = [];
+      const objRegex = /"code"\s*:\s*"([^"]+)"\s*,\s*"desc"\s*:\s*"([^"]*)"?/g;
+      let m;
+      while ((m = objRegex.exec(cleaned)) !== null) {
+        recovered.push({
+          checked: true,
+          code: m[1].trim().toUpperCase(),
+          desc: m[2].replace(/\\"/g, '"').trim()
+        });
+      }
+      if (recovered.length > 0) return recovered;
+
+      // 3차 시도: 텍스트 줄에서 DTC 코드 패턴 직접 추출
+      const lines = cleaned.split(/\r?\n/);
+      const dtcPattern = /\b([PUBC][0-9A-F]{4,6})\b/i;
+      for (const line of lines) {
+        const codeMatch = line.match(dtcPattern);
+        if (codeMatch) {
+          const code = codeMatch[1].toUpperCase();
+          const desc = line.replace(codeMatch[0], "").replace(/^[\s\-:|"'{}\[\],]+|["'{}\[\],]+$/g, "").trim();
+          recovered.push({ checked: true, code, desc });
+        }
+      }
+      return recovered;
+    }
+
+    function analyzeDtcImageFile(file) {
+      document.getElementById("dtcOcrLoading").classList.remove("hidden");
+      document.getElementById("dtcOcrResultArea").classList.add("hidden");
+
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const img = new Image();
+        img.onload = async () => {
+          const canvas = document.createElement("canvas");
+          const maxW = 960;
+          const scale = img.width > maxW ? maxW / img.width : 1;
+          canvas.width = img.width * scale;
+          canvas.height = img.height * scale;
+          canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+          const base64Data = canvas.toDataURL("image/jpeg", 0.72).split(",")[1];
+
+          try {
+            const promptText = `진단기 화면에서 고장코드(code)와 설명(desc)을 짧고 간결한 JSON 배열로 추출하세요. 제어유닛명이 있으면 desc 앞에 [제어유닛]을 붙이세요. 따옴표(")는 쓰지 마세요. 형식: [{"code":"U041500","desc":"[DME] Data bus error"}]`;
+            const res = await fetchWithTimeout(
+              `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${sharedGeminiApiKey}`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  contents: [{
+                    parts: [
+                      { text: promptText },
+                      { inline_data: { mime_type: "image/jpeg", data: base64Data } }
+                    ]
+                  }],
+                  generationConfig: {
+                    temperature: 0.1,
+                    maxOutputTokens: 2048
+                  }
+                })
+              },
+              35000
+            );
+            const json = await res.json();
+            if (json.error) throw new Error(json.error.message || "API 호출 오류");
+
+            const rawText = json.candidates?.[0]?.content?.parts?.[0]?.text || "";
+            extractedDtcs = extractDtcsResilient(rawText);
+
+            if (!extractedDtcs || extractedDtcs.length === 0) {
+              alert("이미지에서 고장코드를 찾지 못했습니다. 고장코드가 선명하게 보이도록 다시 캡처하거나 촬영해 주세요.");
+              document.getElementById("dtcOcrLoading").classList.add("hidden");
+              return;
+            }
+
+            renderExtractedDtcList();
+            document.getElementById("dtcOcrLoading").classList.add("hidden");
+            document.getElementById("dtcOcrResultArea").classList.remove("hidden");
+          } catch (err) {
+            console.error(err);
+            document.getElementById("dtcOcrLoading").classList.add("hidden");
+            const msg = err.name === "AbortError" ? "응답 시간 초과(35초)" : err.message;
+            alert("이미지 분석 중 오류가 발생했습니다: " + msg);
+          }
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function renderExtractedDtcList() {
+      const container = document.getElementById("extractedDtcList");
+      container.innerHTML = extractedDtcs.map((item, idx) => `
+        <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs">
+          <input type="checkbox" ${item.checked ? "checked" : ""} onchange="extractedDtcs[${idx}].checked = this.checked" class="rounded text-blue-600 w-4 h-4" />
+          <input type="text" value="${item.code}" oninput="extractedDtcs[${idx}].code = this.value.toUpperCase()" placeholder="코드명" class="w-28 border border-slate-300 rounded-lg px-2 py-1.5 font-mono font-bold text-rose-700 bg-white" />
+          <input type="text" value="${item.desc.replace(/"/g, '&quot;')}" oninput="extractedDtcs[${idx}].desc = this.value" placeholder="고장코드 내용" class="flex-1 border border-slate-300 rounded-lg px-2 py-1.5 text-slate-800 bg-white" />
+          <button onclick="extractedDtcs.splice(${idx}, 1); renderExtractedDtcList();" class="text-slate-400 hover:text-rose-600 px-1"><i class="fa-solid fa-trash"></i></button>
+        </div>
+      `).join("");
+    }
+
+    window.addEmptyExtractedRow = () => {
+      extractedDtcs.push({ checked: true, code: "", desc: "" });
+      renderExtractedDtcList();
+    };
+
+    window.confirmSaveExtractedDtcs = async () => {
+      if (!canEdit()) return;
+      const c = cases.find(item => item.id === selectedId);
+      if (!c) return;
+
+      const selectedItems = extractedDtcs
+        .filter(item => item.checked && item.code.trim())
+        .map(item => ({ code: item.code.trim().toUpperCase(), desc: item.desc.trim() }));
+
+      if (selectedItems.length === 0) return alert("저장할 고장코드를 1개 이상 선택해 주세요.");
+
+      c.dtcs = [...(c.dtcs || []), ...selectedItems];
+      closeDtcOcrModal();
+      await persistCase(c);
+    };
+
+    window.openNewCaseModal = () => {
+      if (!canEdit()) return;
+      editingCaseId = null;
+      document.getElementById("caseModalTitle").textContent = "신규 수리 차량 등록";
+      document.getElementById("modalCaseAuthor").textContent = currentUser.name;
+      document.getElementById("inputPlate").value = "";
+      document.getElementById("inputStatus").value = "진단중";
+      document.getElementById("inputVin").value = "";
+      document.getElementById("inputSymptom").value = "";
+      document.getElementById("inputResolution").value = "";
+      document.getElementById("caseModal").classList.remove("hidden");
+    };
+
+    window.openEditCaseModal = () => {
+      if (!canEdit()) return;
+      const c = cases.find(item => item.id === selectedId);
+      if (!c) return;
+      editingCaseId = c.id;
+      document.getElementById("caseModalTitle").textContent = "차량 정보 수정";
+      document.getElementById("modalCaseAuthor").textContent = `${c.createdBy || currentUser.name} (수정자: ${currentUser.name})`;
+      document.getElementById("inputPlate").value = c.plate;
+      document.getElementById("inputStatus").value = c.status;
+      document.getElementById("inputVin").value = c.vin || "";
+      document.getElementById("inputSymptom").value = c.symptom || "";
+      document.getElementById("inputResolution").value = c.resolution || "";
+      document.getElementById("caseModal").classList.remove("hidden");
+    };
+
+    window.closeCaseModal = () => document.getElementById("caseModal").classList.add("hidden");
+
+    window.saveCase = async () => {
+      if (!canEdit()) return;
+      const plate = document.getElementById("inputPlate").value.trim();
+      if (!plate) return alert("차량번호를 입력해 주세요.");
+      const existing = editingCaseId ? cases.find(c => c.id === editingCaseId) : null;
+      const obj = {
+        id: editingCaseId || "case_" + Date.now(),
+        plate,
+        status: document.getElementById("inputStatus").value,
+        vin: document.getElementById("inputVin").value.trim().toUpperCase(),
+        symptom: document.getElementById("inputSymptom").value.trim(),
+        resolution: document.getElementById("inputResolution").value.trim(),
+        createdBy: existing ? (existing.createdBy || currentUser.name) : currentUser.name,
+        dtcs: existing ? (existing.dtcs || []) : [],
+        steps: existing ? (existing.steps || []) : [],
+        updatedAt: Date.now()
+      };
+      selectedId = obj.id;
+      closeCaseModal();
+      await persistCase(obj);
+    };
+
+    window.quickStatusChange = async (newStatus) => {
+      if (!canEdit()) return;
+      const c = cases.find(item => item.id === selectedId);
+      if (!c) return;
+      c.status = newStatus;
+      await persistCase(c);
+    };
+
+    window.deleteCurrentCase = async () => {
+      if (!canEdit()) return;
+      if (!selectedId || !confirm("이 차량의 모든 수리 기록을 삭제하시겠습니까?")) return;
+      const targetId = selectedId;
+      selectedId = null;
+      await deleteDoc(doc(db, "repair_cases", targetId));
+    };
+
+    window.addDtcPrompt = async () => {
+      if (!canEdit()) return;
+      const c = cases.find(item => item.id === selectedId);
+      if (!c) return;
+      const code = prompt("진단 코드(DTC)를 입력하세요 (예: P029900)");
+      if (!code) return;
+      const desc = prompt("고장 코드 내용을 입력하세요 (예: 과급 압력 제어 한계 미달)") || "";
+      c.dtcs = [...(c.dtcs || []), { code: code.trim().toUpperCase(), desc: desc.trim() }];
+      await persistCase(c);
+    };
+
+    window.removeDtc = async (idx) => {
+      if (!canEdit()) return;
+      const c = cases.find(item => item.id === selectedId);
+      if (!c) return;
+      c.dtcs.splice(idx, 1);
+      await persistCase(c);
+    };
+
+    window.openNewStepModal = () => {
+      if (!canEdit()) return;
+      editingStepId = null;
+      tempStepPhotos = [];
+      document.getElementById("stepModalTitle").textContent = "해결 과정 추가";
+      document.getElementById("modalStepAuthor").textContent = currentUser.name;
+      document.getElementById("stepDate").value = new Date().toISOString().slice(0, 10);
+      document.getElementById("stepTag").value = "정밀점검/계측";
+      document.getElementById("stepTitle").value = "";
+      document.getElementById("stepDetail").value = "";
+      document.getElementById("stepIsRoot").checked = false;
+      document.getElementById("stepIncludeReport").checked = true;
+      renderStepPhotoPreview();
+      document.getElementById("stepModal").classList.remove("hidden");
+    };
+
+    window.openEditStepModal = (stepId) => {
+      if (!canEdit()) return;
+      const c = cases.find(item => item.id === selectedId);
+      const s = (c?.steps || []).find(item => item.id === stepId);
+      if (!s) return;
+      editingStepId = s.id;
+      tempStepPhotos = [...(s.photos || [])];
+      document.getElementById("stepModalTitle").textContent = "해결 과정 수정";
+      document.getElementById("modalStepAuthor").textContent = `${s.author || currentUser.name} (수정자: ${currentUser.name})`;
+      document.getElementById("stepDate").value = s.date || "";
+      document.getElementById("stepTag").value = s.tag || "정밀점검/계측";
+      document.getElementById("stepTitle").value = s.title || "";
+      document.getElementById("stepDetail").value = s.detail || "";
+      document.getElementById("stepIsRoot").checked = !!s.isRoot;
+      document.getElementById("stepIncludeReport").checked = s.includeReport !== false;
+      renderStepPhotoPreview();
+      document.getElementById("stepModal").classList.remove("hidden");
+    };
+
+    window.closeStepModal = () => document.getElementById("stepModal").classList.add("hidden");
+
+    window.handleImageUpload = (e) => {
+      const files = Array.from(e.target.files || []);
+      appendCompressedStepPhotos(files);
+      e.target.value = "";
+    };
+
+    function appendCompressedStepPhotos(files) {
+      files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement("canvas");
+            const maxW = 1000;
+            const scale = img.width > maxW ? maxW / img.width : 1;
+            canvas.width = img.width * scale;
+            canvas.height = img.height * scale;
+            canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+            tempStepPhotos.push(canvas.toDataURL("image/jpeg", 0.72));
+            renderStepPhotoPreview();
+          };
+          img.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function renderStepPhotoPreview() {
+      document.getElementById("stepPhotoPreview").innerHTML = tempStepPhotos.map((src, i) => `
+        <div class="relative">
+          <img src="${src}" class="w-full h-20 object-cover rounded-lg border" />
+          <button onclick="removeTempPhoto(${i})" class="absolute top-1 right-1 bg-black/70 text-white w-5 h-5 rounded-full text-xs">&times;</button>
+        </div>
+      `).join("");
+    }
+
+    window.removeTempPhoto = (i) => {
+      tempStepPhotos.splice(i, 1);
+      renderStepPhotoPreview();
+    };
+
+    window.saveStep = async () => {
+      if (!canEdit()) return;
+      const c = cases.find(item => item.id === selectedId);
+      if (!c) return;
+      const title = document.getElementById("stepTitle").value.trim();
+      if (!title) return alert("과정 제목을 입력해 주세요.");
+      const existingStep = editingStepId ? (c.steps || []).find(s => s.id === editingStepId) : null;
+      const stepObj = {
+        id: editingStepId || "step_" + Date.now(),
+        date: document.getElementById("stepDate").value,
+        tag: document.getElementById("stepTag").value,
+        title,
+        detail: document.getElementById("stepDetail").value.trim(),
+        author: existingStep ? (existingStep.author || currentUser.name) : currentUser.name,
+        isRoot: document.getElementById("stepIsRoot").checked,
+        includeReport: document.getElementById("stepIncludeReport").checked,
+        photos: tempStepPhotos
+      };
+      c.steps = c.steps || [];
+      if (editingStepId) {
+        const idx = c.steps.findIndex(s => s.id === editingStepId);
+        if (idx > -1) c.steps[idx] = stepObj;
+      } else {
+        c.steps.push(stepObj);
+      }
+      closeStepModal();
+      await persistCase(c);
+    };
+
+    window.deleteStep = async (stepId) => {
+      if (!canEdit()) return;
+      const c = cases.find(item => item.id === selectedId);
+      if (!c || !confirm("이 해결 과정을 삭제하시겠습니까?")) return;
+      c.steps = (c.steps || []).filter(s => s.id !== stepId);
+      await persistCase(c);
+    };
+
+    window.openLightbox = (src) => {
+      document.getElementById("lightboxImg").src = src;
+      document.getElementById("lightboxModal").classList.remove("hidden");
+    };
+    window.closeLightbox = () => document.getElementById("lightboxModal").classList.add("hidden");
+
+    window.printCustomerReport = () => {
+      const c = cases.find(item => item.id === selectedId);
+      if (!c) return;
+      const includedSteps = (c.steps || []).filter(s => s.includeReport !== false);
+      document.getElementById("printArea").innerHTML = `
+        <div style="border-bottom:2px solid #0f172a; padding-bottom:12px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:flex-end;">
+          <div>
+            <div style="font-size:12px; font-weight:700; color:#2563eb;">PSM MOTORS 정밀 진단 리포트</div>
+            <h1 style="font-size:22px; font-weight:900; margin:4px 0 0 0;">차량 정밀 점검 및 문제 해결 보고서</h1>
+          </div>
+          <div style="text-align:right; font-size:12px; color:#475569;">
+            <div>차량번호: <strong>${c.plate}</strong></div>
+            <div>차대번호: ${c.vin || "-"}</div>
+          </div>
+        </div>
+        <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:12px; margin-bottom:14px;">
+          <div style="font-size:12px; font-weight:700; color:#b45309; margin-bottom:4px;">■ 입고 당시 문제 증상</div>
+          <div style="font-size:13px; white-space:pre-line;">${c.symptom || "-"}</div>
+        </div>
+        <div style="background:#ecfdf5; border:1px solid #6ee7b7; border-radius:8px; padding:12px; margin-bottom:18px;">
+          <div style="font-size:12px; font-weight:700; color:#047857; margin-bottom:4px;">■ 원인 규명 및 최종 조치 결과</div>
+          <div style="font-size:13px; white-space:pre-line;">${c.resolution || "-"}</div>
+        </div>
+        <h2 style="font-size:15px; font-weight:800; margin-bottom:10px;">단계별 정밀 점검 및 수리 내역</h2>
+        ${includedSteps.map((s, i) => `
+          <div style="border:1px solid #e2e8f0; border-radius:8px; padding:10px; margin-bottom:10px; page-break-inside:avoid;">
+            <div style="font-size:11px; color:#64748b; margin-bottom:2px;">${s.date} | ${s.tag}</div>
+            <div style="font-size:14px; font-weight:700; margin-bottom:4px;">${i + 1}. ${s.title}</div>
+            <div style="font-size:12px; color:#334155; white-space:pre-line;">${s.detail}</div>
+            ${(s.photos || []).length ? `<div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">${s.photos.map(p => `<img src="${p}" style="width:150px; height:110px; object-fit:cover; border-radius:4px; border:1px solid #cbd5e1;" />`).join("")}</div>` : ""}
+          </div>
+        `).join("")}
+      `;
+      window.print();
+    };
+
+    window.exportBackupJSON = () => {
+      const blob = new Blob([JSON.stringify(cases, null, 2)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "PSM_수리일지_백업_" + new Date().toISOString().slice(0, 10) + ".json";
+      a.click();
+    };
+  </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>난제인 차량 수리 문제 해결 과정</title>
+  <link rel="manifest" href="./manifest.json" />
+  <meta name="theme-color" content="#0f172a" />
+  <link rel="apple-touch-icon" href="./icon-512.png" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;900&display=swap');
+    body { font-family: 'Noto Sans KR', sans-serif; background-color: #f1f5f9; color: #1e293b; }
+    .print-only { display: none; }
+    @media print {
+      body { background: #fff !important; }
+      .no-print { display: none !important; }
+      .print-only { display: block !important; }
+      @page { size: A4; margin: 12mm; }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- 개별 아이디/비밀번호 로그인 화면 -->
+  <div id="loginOverlay" class="no-print fixed inset-0 bg-slate-900/95 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl">
+      <div class="flex items-center gap-2.5 mb-5">
+        <div class="bg-blue-600 text-white font-black text-xs px-2.5 py-1.5 rounded-lg tracking-wider">PSM</div>
+        <div>
+          <h2 class="text-base font-black text-slate-900">PSM Motors 시스템 로그인</h2>
+          <p class="text-xs text-slate-500">부여받은 개인 아이디와 비밀번호를 입력하세요.</p>
+        </div>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">아이디</label>
+          <input id="loginIdInput" type="text" autocomplete="username" placeholder="아이디 입력 (초기 관리자: admin)" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 font-bold" />
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">비밀번호</label>
+          <input id="loginPwInput" type="password" autocomplete="current-password" placeholder="비밀번호 입력 (초기 비밀번호: 1234)" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 font-bold" onkeydown="if(event.key==='Enter') handleLogin()" />
+        </div>
+        <p id="loginStatusMsg" class="text-[11px] text-amber-600 font-semibold">서버 계정 목록 불러오는 중...</p>
+      </div>
+
+      <button id="loginSubmitBtn" onclick="handleLogin()" class="mt-5 w-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm py-3 rounded-xl shadow-md transition">
+        로그인
+      </button>
+    </div>
+  </div>
+
+  <!-- 상단 헤더 -->
+  <header class="no-print bg-slate-900 text-white px-4 py-3 shadow-md sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto flex items-center justify-between gap-2 flex-wrap">
+      <div class="flex items-center gap-2.5">
+        <div class="bg-blue-600 text-white font-black text-xs px-2.5 py-1.5 rounded-lg tracking-wider">PSM</div>
+        <div>
+          <h1 class="text-sm sm:text-base font-bold leading-tight">난제인 차량 수리 문제 해결 과정</h1>
+          <p class="text-[11px] text-slate-400 flex items-center gap-1.5">
+            <span id="syncDot" class="inline-block w-2 h-2 rounded-full bg-amber-400"></span>
+            <span id="syncText">서버 연결 중...</span>
+          </p>
+        </div>
+      </div>
+      <div class="flex items-center gap-1.5 sm:gap-2">
+        <div class="bg-slate-800 text-slate-200 text-xs font-bold px-2.5 py-2 rounded-lg border border-slate-700 flex items-center gap-1.5">
+          <i class="fa-solid fa-user text-blue-400"></i>
+          <span id="currentUserName">-</span>
+          <span id="currentUserRoleBadge" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-700 text-slate-300">-</span>
+        </div>
+
+        <button id="btnAiSettings" onclick="openAiKeyModal()" class="hidden bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-2.5 py-2 rounded-lg flex items-center gap-1.5 shadow" title="사진 인식 AI 키 설정">
+          <i class="fa-solid fa-wand-magic-sparkles"></i><span class="hidden sm:inline">AI 설정</span>
+        </button>
+
+        <button id="btnManageUsers" onclick="openUserModal()" class="hidden bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold px-2.5 py-2 rounded-lg flex items-center gap-1.5 shadow">
+          <i class="fa-solid fa-users-gear"></i><span class="hidden sm:inline">계정 관리</span>
+        </button>
+
+        <button id="btnNewCase" onclick="openNewCaseModal()" class="hidden bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-semibold px-3 py-2 rounded-lg flex items-center gap-1.5 shadow">
+          <i class="fa-solid fa-plus"></i><span>신규 등록</span>
+        </button>
+
+        <button onclick="exportBackupJSON()" title="백업 저장" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-2.5 py-2 rounded-lg border border-slate-700">
+          <i class="fa-solid fa-download"></i>
+        </button>
+
+        <button onclick="logoutUser()" title="로그아웃" class="bg-slate-800 hover:bg-rose-900/70 text-slate-300 hover:text-rose-200 text-xs px-2.5 py-2 rounded-lg border border-slate-700">
+          <i class="fa-solid fa-right-from-bracket"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 메인 작업 영역 -->
+  <main class="no-print flex-1 max-w-7xl w-full mx-auto p-3 sm:p-5 grid grid-cols-1 lg:grid-cols-12 gap-4">
+    <section class="lg:col-span-4 bg-white rounded-2xl shadow-sm border border-slate-200 p-3.5 flex flex-col max-h-[82vh]">
+      <div class="relative mb-2.5">
+        <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-xs"></i>
+        <input id="searchInput" oninput="renderCaseList()" type="text" placeholder="차량번호, 차대번호, 진단코드, 작성자 검색..." class="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-blue-500" />
+      </div>
+      <div class="flex gap-1.5 mb-3 overflow-x-auto pb-1">
+        <button onclick="setFilter('ALL')" id="filter-ALL" class="filter-btn px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-900 text-white">전체</button>
+        <button onclick="setFilter('진단중')" id="filter-진단중" class="filter-btn px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">진단중</button>
+        <button onclick="setFilter('수리중')" id="filter-수리중" class="filter-btn px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">수리중</button>
+        <button onclick="setFilter('해결완료')" id="filter-해결완료" class="filter-btn px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">해결완료</button>
+      </div>
+      <div id="caseList" class="flex-1 overflow-y-auto space-y-2 pr-1"></div>
+    </section>
+
+    <section id="detailPanel" class="lg:col-span-8 bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-6 min-h-[60vh]">
+      <div class="h-full flex flex-col items-center justify-center text-slate-400 py-16">
+        <i class="fa-solid fa-car-wrench text-4xl mb-3 text-slate-300"></i>
+        <p class="text-sm font-medium">좌측 목록에서 차량을 선택해 주세요.</p>
+      </div>
+    </section>
+  </main>
+
+  <div id="printArea" class="print-only"></div>
+
+  <div id="lightboxModal" onclick="closeLightbox()" class="hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
+    <img id="lightboxImg" src="" class="max-w-full max-h-[90vh] rounded-lg shadow-2xl" />
+  </div>
+
+  <!-- Gemini AI API 키 설정 모달 -->
+  <div id="aiKeyModal" class="hidden fixed inset-0 bg-slate-900/60 z-40 flex items-center justify-center p-3">
+    <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-xl">
+      <div class="flex justify-between items-center mb-3 pb-2 border-b border-slate-200">
+        <h2 class="text-base font-black text-slate-900"><i class="fa-solid fa-wand-magic-sparkles text-indigo-600 mr-1.5"></i>고장코드 사진 인식 AI 설정</h2>
+        <button onclick="closeAiKeyModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <p class="text-slate-600 leading-relaxed">
+          진단기 화면 사진을 찍거나 캡처해 붙여넣어 고장코드와 내용을 자동 분리하려면 <strong>Google Gemini API 키</strong>를 한 번만 등록해 주세요. (모든 직원 기기에 자동 공유됩니다.)
+        </p>
+        <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-[11px] text-slate-600 space-y-1">
+          <div class="font-bold text-slate-800">무료 API 키 발급 방법:</div>
+          <div>1. <a href="https://aistudio.google.com/apikey" target="_blank" class="text-blue-600 underline font-bold">Google AI Studio (aistudio.google.com/apikey)</a> 접속</div>
+          <div>2. 구글 로그인 후 <strong>[API 키 만들기]</strong> 클릭 및 복사</div>
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Gemini API Key *</label>
+          <input id="geminiApiKeyInput" type="text" placeholder="AIzaSy..." class="w-full border border-slate-300 rounded-xl px-3 py-2.5 font-mono text-xs" />
+        </div>
+      </div>
+      <div class="mt-5 flex justify-end gap-2">
+        <button onclick="closeAiKeyModal()" class="px-4 py-2 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700">취소</button>
+        <button onclick="saveGeminiApiKey()" class="px-4 py-2 rounded-lg text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white">키 저장</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 사진으로 고장코드(DTC) 자동 추출 및 검수 모달 -->
+  <div id="dtcOcrModal" class="hidden fixed inset-0 bg-slate-900/60 z-40 flex items-center justify-center p-3">
+    <div class="bg-white rounded-2xl max-w-xl w-full p-5 shadow-xl max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center mb-3 pb-2 border-b border-slate-200">
+        <div>
+          <h2 class="text-base font-black text-slate-900"><i class="fa-solid fa-camera text-blue-600 mr-1.5"></i>사진에서 고장코드 자동 추출</h2>
+          <p class="text-xs text-slate-500">진단기 모니터를 찍거나 PC에서 캡처 후 <strong>Ctrl + V</strong>로 바로 붙여넣으세요.</p>
+        </div>
+        <button onclick="closeDtcOcrModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <div class="flex gap-2 mb-2.5 text-xs">
+        <label class="flex-1 bg-blue-600 hover:bg-blue-500 text-white rounded-xl py-2.5 px-3 text-center font-bold cursor-pointer shadow-sm">
+          <i class="fa-solid fa-camera mr-1"></i> 진단기 화면 바로 촬영
+          <input type="file" accept="image/*" capture="environment" onchange="processDtcImage(event)" class="hidden" />
+        </label>
+        <label class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 rounded-xl py-2.5 px-3 text-center font-bold cursor-pointer">
+          <i class="fa-solid fa-images mr-1"></i> 사진첩/캡처 선택
+          <input type="file" accept="image/*" onchange="processDtcImage(event)" class="hidden" />
+        </label>
+      </div>
+
+      <div class="mb-3 border-2 border-dashed border-indigo-200 bg-indigo-50/60 rounded-xl py-3 px-4 text-center text-xs text-indigo-800">
+        <i class="fa-solid fa-paste mr-1"></i> PC에서 화면 캡처(<strong>Win+Shift+S</strong>) 후 이 창에서 <strong>Ctrl + V</strong>를 누르면 즉시 추출됩니다.
+      </div>
+
+      <div id="dtcOcrLoading" class="hidden py-8 text-center">
+        <i class="fa-solid fa-spinner fa-spin text-2xl text-blue-600 mb-2"></i>
         <p class="text-xs font-bold text-slate-700">AI가 진단기 화면에서 고장코드와 내용을 분리 추출하고 있습니다...</p>
       </div>
 
