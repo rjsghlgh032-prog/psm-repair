@@ -66,12 +66,16 @@
         </div>
       </div>
       <div class="flex items-center gap-1.5 sm:gap-2">
-        <!-- 현재 로그인 사용자 및 권한 배지 -->
         <div class="bg-slate-800 text-slate-200 text-xs font-bold px-2.5 py-2 rounded-lg border border-slate-700 flex items-center gap-1.5">
           <i class="fa-solid fa-user text-blue-400"></i>
           <span id="currentUserName">-</span>
           <span id="currentUserRoleBadge" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-700 text-slate-300">-</span>
         </div>
+
+        <!-- 관리자 전용 AI API 키 설정 버튼 -->
+        <button id="btnAiSettings" onclick="openAiKeyModal()" class="hidden bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-2.5 py-2 rounded-lg flex items-center gap-1.5 shadow" title="사진 인식 AI 키 설정">
+          <i class="fa-solid fa-wand-magic-sparkles"></i><span class="hidden sm:inline">AI 설정</span>
+        </button>
 
         <!-- 관리자 전용 계정 관리 버튼 -->
         <button id="btnManageUsers" onclick="openUserModal()" class="hidden bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold px-2.5 py-2 rounded-lg flex items-center gap-1.5 shadow">
@@ -128,6 +132,80 @@
     <img id="lightboxImg" src="" class="max-w-full max-h-[90vh] rounded-lg shadow-2xl" />
   </div>
 
+  <!-- 관리자 전용: Gemini AI API 키 설정 모달 -->
+  <div id="aiKeyModal" class="hidden fixed inset-0 bg-slate-900/60 z-40 flex items-center justify-center p-3">
+    <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-xl">
+      <div class="flex justify-between items-center mb-3 pb-2 border-b border-slate-200">
+        <h2 class="text-base font-black text-slate-900"><i class="fa-solid fa-wand-magic-sparkles text-indigo-600 mr-1.5"></i>고장코드 사진 인식 AI 설정</h2>
+        <button onclick="closeAiKeyModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <p class="text-slate-600 leading-relaxed">
+          진단기 화면 사진을 찍어 고장코드와 내용을 자동 분리하려면 <strong>Google Gemini API 키</strong>를 한 번만 등록해 주세요. (모든 직원 기기에 자동 공유됩니다.)
+        </p>
+        <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-[11px] text-slate-600 space-y-1">
+          <div class="font-bold text-slate-800">무료 API 키 발급 방법:</div>
+          <div>1. <a href="https://aistudio.google.com/apikey" target="_blank" class="text-blue-600 underline font-bold">Google AI Studio (aistudio.google.com/apikey)</a> 접속</div>
+          <div>2. 구글 로그인 후 <strong>[API 키 만들기]</strong> 클릭 및 복사</div>
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Gemini API Key *</label>
+          <input id="geminiApiKeyInput" type="text" placeholder="AIzaSy..." class="w-full border border-slate-300 rounded-xl px-3 py-2.5 font-mono text-xs" />
+        </div>
+      </div>
+      <div class="mt-5 flex justify-end gap-2">
+        <button onclick="closeAiKeyModal()" class="px-4 py-2 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700">취소</button>
+        <button onclick="saveGeminiApiKey()" class="px-4 py-2 rounded-lg text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white">키 저장</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 사진으로 고장코드(DTC) 자동 추출 및 검수 모달 -->
+  <div id="dtcOcrModal" class="hidden fixed inset-0 bg-slate-900/60 z-40 flex items-center justify-center p-3">
+    <div class="bg-white rounded-2xl max-w-xl w-full p-5 shadow-xl max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center mb-3 pb-2 border-b border-slate-200">
+        <div>
+          <h2 class="text-base font-black text-slate-900"><i class="fa-solid fa-camera text-blue-600 mr-1.5"></i>사진에서 고장코드 자동 추출</h2>
+          <p class="text-xs text-slate-500">진단기 모니터나 스캔 리포트 사진을 올리면 코드명과 내용을 자동 분리합니다.</p>
+        </div>
+        <button onclick="closeDtcOcrModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <!-- 촬영 / 앨범 선택 버튼 -->
+      <div class="flex gap-2 mb-3 text-xs">
+        <label class="flex-1 bg-blue-600 hover:bg-blue-500 text-white rounded-xl py-2.5 px-3 text-center font-bold cursor-pointer shadow-sm">
+          <i class="fa-solid fa-camera mr-1"></i> 진단기 화면 바로 촬영
+          <input type="file" accept="image/*" capture="environment" onchange="processDtcImage(event)" class="hidden" />
+        </label>
+        <label class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 rounded-xl py-2.5 px-3 text-center font-bold cursor-pointer">
+          <i class="fa-solid fa-images mr-1"></i> 사진첩/캡처 선택
+          <input type="file" accept="image/*" onchange="processDtcImage(event)" class="hidden" />
+        </label>
+      </div>
+
+      <!-- 분석 중 로딩 표시 -->
+      <div id="dtcOcrLoading" class="hidden py-8 text-center">
+        <i class="fa-solid fa-spinner fa-spin text-2xl text-blue-600 mb-2"></i>
+        <p class="text-xs font-bold text-slate-700">AI가 진단기 화면에서 고장코드와 내용을 분리 추출하고 있습니다...</p>
+      </div>
+
+      <!-- 미리보기 및 추출된 코드 목록 -->
+      <div id="dtcOcrResultArea" class="hidden space-y-3">
+        <div class="flex items-center justify-between bg-emerald-50 border border-emerald-200 px-3 py-2 rounded-xl text-xs">
+          <span class="font-bold text-emerald-800"><i class="fa-solid fa-circle-check mr-1"></i>추출 완료! 내용을 확인/수정한 뒤 저장하세요.</span>
+          <button onclick="addEmptyExtractedRow()" class="text-blue-700 font-bold underline">+ 행 추가</button>
+        </div>
+
+        <div id="extractedDtcList" class="space-y-2 max-h-64 overflow-y-auto pr-1"></div>
+
+        <div class="pt-3 border-t border-slate-200 flex justify-end gap-2">
+          <button onclick="closeDtcOcrModal()" class="px-4 py-2 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700">취소</button>
+          <button onclick="confirmSaveExtractedDtcs()" class="px-4 py-2 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white">선택한 코드 일괄 저장</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- 관리자 전용: 직원 계정 발급 및 권한 관리 모달 -->
   <div id="userModal" class="hidden fixed inset-0 bg-slate-900/60 z-40 flex items-center justify-center p-3">
     <div class="bg-white rounded-2xl max-w-xl w-full p-5 shadow-xl max-h-[90vh] overflow-y-auto">
@@ -139,7 +217,6 @@
         <button onclick="closeUserModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
 
-      <!-- 새 계정 생성 / 수정 폼 -->
       <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 mb-4 text-xs">
         <div class="font-bold text-slate-800 mb-2.5" id="userFormTitle">+ 새 직원 계정 만들기</div>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -170,7 +247,6 @@
         </div>
       </div>
 
-      <!-- 등록된 계정 목록 -->
       <div class="text-xs font-bold text-slate-700 mb-2">등록된 직원 계정 목록</div>
       <div id="userAccountList" class="space-y-2 max-h-60 overflow-y-auto"></div>
     </div>
@@ -288,7 +364,7 @@
     </div>
   </div>
 
-  <!-- Firebase 실시간 데이터베이스 및 계정·권한 시스템 -->
+  <!-- Firebase 실시간 데이터베이스, 계정·권한 및 AI OCR 시스템 -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -306,15 +382,18 @@
     const db = getFirestore(app);
     const casesCol = collection(db, "repair_cases");
     const usersCol = collection(db, "staff_users");
+    const configDocRef = doc(db, "app_settings", "ai_config");
 
     let cases = [];
     let staffUsers = [];
+    let sharedGeminiApiKey = "";
     let currentUser = null;
     let selectedId = null;
     let currentFilter = "ALL";
     let editingCaseId = null;
     let editingStepId = null;
     let tempStepPhotos = [];
+    let extractedDtcs = [];
 
     function canEdit() {
       return currentUser && (currentUser.role === "admin" || currentUser.role === "edit");
@@ -328,6 +407,28 @@
       return "보기전용";
     }
 
+    // 0. 공유 Gemini API 키 동기화
+    onSnapshot(configDocRef, (snap) => {
+      if (snap.exists()) {
+        sharedGeminiApiKey = snap.data().geminiApiKey || "";
+      }
+    });
+
+    window.openAiKeyModal = () => {
+      if (!isAdmin()) return;
+      document.getElementById("geminiApiKeyInput").value = sharedGeminiApiKey;
+      document.getElementById("aiKeyModal").classList.remove("hidden");
+    };
+    window.closeAiKeyModal = () => document.getElementById("aiKeyModal").classList.add("hidden");
+
+    window.saveGeminiApiKey = async () => {
+      if (!isAdmin()) return;
+      const key = document.getElementById("geminiApiKeyInput").value.trim();
+      await setDoc(configDocRef, { geminiApiKey: key });
+      closeAiKeyModal();
+      alert("AI API 키가 저장되었습니다. 이제 모든 직원이 진단기 사진에서 고장코드를 자동 추출할 수 있습니다.");
+    };
+
     // 1. 직원 계정 실시간 동기화 및 초기 관리자(admin / 1234) 자동 세팅
     onSnapshot(usersCol, async (snapshot) => {
       staffUsers = snapshot.docs.map(d => d.data());
@@ -336,10 +437,9 @@
         await setDoc(doc(db, "staff_users", "admin"), defaultAdmin);
         return;
       }
-      document.getElementById("loginStatusMsg").textContent = "로그인 준비 완료 (초기 관리자: admin / 1234)";
+      document.getElementById("loginStatusMsg").textContent = "로그인 준비 완료";
       document.getElementById("loginStatusMsg").className = "text-[11px] text-emerald-600 font-semibold";
 
-      // 이미 로그인된 상태라면 최신 권한/이름 반영 (계정 삭제 시 강제 로그아웃)
       const savedId = localStorage.getItem("psm_logged_user_id");
       if (savedId) {
         const found = staffUsers.find(u => u.id === savedId);
@@ -359,11 +459,12 @@
       document.getElementById("currentUserName").textContent = user.name;
       document.getElementById("currentUserRoleBadge").textContent = roleLabel(user.role);
 
-      // 권한에 따른 상단 버튼 노출 제어
       if (isAdmin()) {
         document.getElementById("btnManageUsers").classList.remove("hidden");
+        document.getElementById("btnAiSettings").classList.remove("hidden");
       } else {
         document.getElementById("btnManageUsers").classList.add("hidden");
+        document.getElementById("btnAiSettings").classList.add("hidden");
       }
       if (canEdit()) {
         document.getElementById("btnNewCase").classList.remove("hidden");
@@ -392,7 +493,7 @@
       document.getElementById("loginOverlay").classList.remove("hidden");
     };
 
-    // 관리자 계정 관리 모달 함수들
+    // 관리자 계정 관리 모달
     window.openUserModal = () => {
       if (!isAdmin()) return;
       resetUserForm();
@@ -628,9 +729,15 @@
         </div>
 
         <div class="mb-5">
-          <div class="flex justify-between items-center mb-2">
+          <div class="flex flex-wrap justify-between items-center gap-2 mb-2">
             <h3 class="text-xs font-bold text-slate-700">검출된 진단 코드 (DTC)</h3>
-            ${editable ? `<button onclick="addDtcPrompt()" class="text-xs font-bold text-blue-600 hover:underline">+ 코드 추가</button>` : ""}
+            ${editable ? `
+            <div class="flex items-center gap-2">
+              <button onclick="openDtcOcrModal()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold px-2.5 py-1 rounded-lg flex items-center gap-1">
+                <i class="fa-solid fa-camera"></i> 사진으로 코드 추출
+              </button>
+              <button onclick="addDtcPrompt()" class="text-xs font-bold text-blue-600 hover:underline">+ 수동 추가</button>
+            </div>` : ""}
           </div>
           <div class="flex flex-wrap gap-1.5">${dtcHtml || `<span class="text-xs text-slate-400">등록된 고장코드가 없습니다.</span>`}</div>
         </div>
@@ -645,6 +752,134 @@
       `;
     };
 
+    // --- 사진으로 고장코드(DTC) 자동 추출 기능 ---
+    window.openDtcOcrModal = () => {
+      if (!canEdit()) return;
+      if (!sharedGeminiApiKey) {
+        if (isAdmin()) {
+          alert("먼저 상단의 보라색 [AI 설정] 버튼을 눌러 무료 Gemini API 키를 1회 등록해 주세요.");
+          openAiKeyModal();
+        } else {
+          alert("관리자(이건호 팀장)가 상단 [AI 설정]에서 API 키를 등록한 후 사용할 수 있습니다.");
+        }
+        return;
+      }
+      extractedDtcs = [];
+      document.getElementById("dtcOcrLoading").classList.add("hidden");
+      document.getElementById("dtcOcrResultArea").classList.add("hidden");
+      document.getElementById("dtcOcrModal").classList.remove("hidden");
+    };
+
+    window.closeDtcOcrModal = () => document.getElementById("dtcOcrModal").classList.add("hidden");
+
+    window.processDtcImage = (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      document.getElementById("dtcOcrLoading").classList.remove("hidden");
+      document.getElementById("dtcOcrResultArea").classList.add("hidden");
+
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const img = new Image();
+        img.onload = async () => {
+          const canvas = document.createElement("canvas");
+          const maxW = 1400;
+          const scale = img.width > maxW ? maxW / img.width : 1;
+          canvas.width = img.width * scale;
+          canvas.height = img.height * scale;
+          canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+          const base64Data = canvas.toDataURL("image/jpeg", 0.85).split(",")[1];
+
+          try {
+            const promptText = `당신은 포르쉐 및 수입차 전문 정비 진단기(PIWIS 3, PIWIS 4 등) 스캔 화면 분석기입니다.
+첨부된 진단기 화면 사진에서 모든 고장코드(DTC)와 그 고장코드의 설명(내용)을 정확히 추출하세요.
+제어유닛 이름(예: DME, PSM, BCM 등)이 보이면 설명 앞에 [제어유닛] 형태로 함께 적어주세요.
+반드시 아래 JSON 배열 형식으로만 응답하고 다른 설명은 적지 마세요:
+[{"code": "고장코드명", "desc": "고장코드 내용 설명"}]`;
+
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${sharedGeminiApiKey}`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                contents: [{
+                  parts: [
+                    { text: promptText },
+                    { inline_data: { mime_type: "image/jpeg", data: base64Data } }
+                  ]
+                }],
+                generationConfig: {
+                  response_mime_type: "application/json"
+                }
+              })
+            });
+
+            const json = await res.json();
+            if (json.error) throw new Error(json.error.message || "API 호출 오류");
+
+            const rawText = json.candidates?.[0]?.content?.parts?.[0]?.text || "[]";
+            const parsed = JSON.parse(rawText);
+
+            if (!Array.isArray(parsed) || parsed.length === 0) {
+              alert("사진에서 고장코드를 찾지 못했습니다. 글자가 선명하게 보이도록 다시 촬영해 주세요.");
+              document.getElementById("dtcOcrLoading").classList.add("hidden");
+              return;
+            }
+
+            extractedDtcs = parsed.map(item => ({
+              checked: true,
+              code: String(item.code || "").trim().toUpperCase(),
+              desc: String(item.desc || "").trim()
+            }));
+
+            renderExtractedDtcList();
+            document.getElementById("dtcOcrLoading").classList.add("hidden");
+            document.getElementById("dtcOcrResultArea").classList.remove("hidden");
+          } catch (err) {
+            console.error(err);
+            document.getElementById("dtcOcrLoading").classList.add("hidden");
+            alert("사진 분석 중 오류가 발생했습니다: " + err.message);
+          }
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+      e.target.value = "";
+    };
+
+    function renderExtractedDtcList() {
+      const container = document.getElementById("extractedDtcList");
+      container.innerHTML = extractedDtcs.map((item, idx) => `
+        <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs">
+          <input type="checkbox" ${item.checked ? "checked" : ""} onchange="extractedDtcs[${idx}].checked = this.checked" class="rounded text-blue-600 w-4 h-4" />
+          <input type="text" value="${item.code}" oninput="extractedDtcs[${idx}].code = this.value.toUpperCase()" placeholder="코드명" class="w-28 border border-slate-300 rounded-lg px-2 py-1.5 font-mono font-bold text-rose-700 bg-white" />
+          <input type="text" value="${item.desc}" oninput="extractedDtcs[${idx}].desc = this.value" placeholder="고장코드 내용" class="flex-1 border border-slate-300 rounded-lg px-2 py-1.5 text-slate-800 bg-white" />
+          <button onclick="extractedDtcs.splice(${idx}, 1); renderExtractedDtcList();" class="text-slate-400 hover:text-rose-600 px-1"><i class="fa-solid fa-trash"></i></button>
+        </div>
+      `).join("");
+    }
+
+    window.addEmptyExtractedRow = () => {
+      extractedDtcs.push({ checked: true, code: "", desc: "" });
+      renderExtractedDtcList();
+    };
+
+    window.confirmSaveExtractedDtcs = async () => {
+      if (!canEdit()) return;
+      const c = cases.find(item => item.id === selectedId);
+      if (!c) return;
+
+      const selectedItems = extractedDtcs
+        .filter(item => item.checked && item.code.trim())
+        .map(item => ({ code: item.code.trim().toUpperCase(), desc: item.desc.trim() }));
+
+      if (selectedItems.length === 0) return alert("저장할 고장코드를 1개 이상 선택해 주세요.");
+
+      c.dtcs = [...(c.dtcs || []), ...selectedItems];
+      closeDtcOcrModal();
+      await persistCase(c);
+    };
+
+    // --- 차량 및 해결 과정 CRUD ---
     window.openNewCaseModal = () => {
       if (!canEdit()) return;
       editingCaseId = null;
