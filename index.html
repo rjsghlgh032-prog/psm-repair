@@ -72,17 +72,14 @@
           <span id="currentUserRoleBadge" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-700 text-slate-300">-</span>
         </div>
 
-        <!-- 관리자 전용 AI API 키 설정 버튼 -->
         <button id="btnAiSettings" onclick="openAiKeyModal()" class="hidden bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-2.5 py-2 rounded-lg flex items-center gap-1.5 shadow" title="사진 인식 AI 키 설정">
           <i class="fa-solid fa-wand-magic-sparkles"></i><span class="hidden sm:inline">AI 설정</span>
         </button>
 
-        <!-- 관리자 전용 계정 관리 버튼 -->
         <button id="btnManageUsers" onclick="openUserModal()" class="hidden bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold px-2.5 py-2 rounded-lg flex items-center gap-1.5 shadow">
           <i class="fa-solid fa-users-gear"></i><span class="hidden sm:inline">계정 관리</span>
         </button>
 
-        <!-- 쓰기 권한 이상만 보이는 신규 등록 버튼 -->
         <button id="btnNewCase" onclick="openNewCaseModal()" class="hidden bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-semibold px-3 py-2 rounded-lg flex items-center gap-1.5 shadow">
           <i class="fa-solid fa-plus"></i><span>신규 등록</span>
         </button>
@@ -100,7 +97,6 @@
 
   <!-- 메인 작업 영역 -->
   <main class="no-print flex-1 max-w-7xl w-full mx-auto p-3 sm:p-5 grid grid-cols-1 lg:grid-cols-12 gap-4">
-    <!-- 좌측: 차량 검색 및 목록 -->
     <section class="lg:col-span-4 bg-white rounded-2xl shadow-sm border border-slate-200 p-3.5 flex flex-col max-h-[82vh]">
       <div class="relative mb-2.5">
         <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-xs"></i>
@@ -115,7 +111,6 @@
       <div id="caseList" class="flex-1 overflow-y-auto space-y-2 pr-1"></div>
     </section>
 
-    <!-- 우측: 상세 내역 및 해결 과정 타임라인 -->
     <section id="detailPanel" class="lg:col-span-8 bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-6 min-h-[60vh]">
       <div class="h-full flex flex-col items-center justify-center text-slate-400 py-16">
         <i class="fa-solid fa-car-wrench text-4xl mb-3 text-slate-300"></i>
@@ -124,15 +119,13 @@
     </section>
   </main>
 
-  <!-- A4 고객 안내 보고서 (인쇄 전용) -->
   <div id="printArea" class="print-only"></div>
 
-  <!-- 사진 전체화면 보기 (Lightbox) -->
   <div id="lightboxModal" onclick="closeLightbox()" class="hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
     <img id="lightboxImg" src="" class="max-w-full max-h-[90vh] rounded-lg shadow-2xl" />
   </div>
 
-  <!-- 관리자 전용: Gemini AI API 키 설정 모달 -->
+  <!-- Gemini AI API 키 설정 모달 -->
   <div id="aiKeyModal" class="hidden fixed inset-0 bg-slate-900/60 z-40 flex items-center justify-center p-3">
     <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-xl">
       <div class="flex justify-between items-center mb-3 pb-2 border-b border-slate-200">
@@ -171,7 +164,6 @@
         <button onclick="closeDtcOcrModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
 
-      <!-- 촬영 / 앨범 선택 버튼 -->
       <div class="flex gap-2 mb-2.5 text-xs">
         <label class="flex-1 bg-blue-600 hover:bg-blue-500 text-white rounded-xl py-2.5 px-3 text-center font-bold cursor-pointer shadow-sm">
           <i class="fa-solid fa-camera mr-1"></i> 진단기 화면 바로 촬영
@@ -183,18 +175,15 @@
         </label>
       </div>
 
-      <!-- PC 클립보드 붙여넣기 안내 영역 -->
       <div class="mb-3 border-2 border-dashed border-indigo-200 bg-indigo-50/60 rounded-xl py-3 px-4 text-center text-xs text-indigo-800">
         <i class="fa-solid fa-paste mr-1"></i> PC에서 화면 캡처(<strong>Win+Shift+S</strong>) 후 이 창에서 <strong>Ctrl + V</strong>를 누르면 즉시 추출됩니다.
       </div>
 
-      <!-- 분석 중 로딩 표시 -->
       <div id="dtcOcrLoading" class="hidden py-8 text-center">
         <i class="fa-solid fa-spinner fa-spin text-2xl text-blue-600 mb-2"></i>
         <p class="text-xs font-bold text-slate-700">AI가 진단기 화면에서 고장코드와 내용을 분리 추출하고 있습니다...</p>
       </div>
 
-      <!-- 미리보기 및 추출된 코드 목록 -->
       <div id="dtcOcrResultArea" class="hidden space-y-3">
         <div class="flex items-center justify-between bg-emerald-50 border border-emerald-200 px-3 py-2 rounded-xl text-xs">
           <span class="font-bold text-emerald-800"><i class="fa-solid fa-circle-check mr-1"></i>추출 완료! 내용을 확인/수정한 뒤 저장하세요.</span>
@@ -211,7 +200,7 @@
     </div>
   </div>
 
-  <!-- 관리자 전용: 직원 계정 발급 및 권한 관리 모달 -->
+  <!-- 직원 계정 발급 및 권한 관리 모달 -->
   <div id="userModal" class="hidden fixed inset-0 bg-slate-900/60 z-40 flex items-center justify-center p-3">
     <div class="bg-white rounded-2xl max-w-xl w-full p-5 shadow-xl max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-200">
@@ -372,7 +361,6 @@
     </div>
   </div>
 
-  <!-- Firebase 실시간 데이터베이스, 계정·권한 및 AI OCR 시스템 -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -415,7 +403,6 @@
       return "보기전용";
     }
 
-    // PC 클립보드(Ctrl + V) 이미지 붙여넣기 전역 리스너
     window.addEventListener("paste", (e) => {
       const items = e.clipboardData?.items;
       if (!items) return;
@@ -442,7 +429,6 @@
       }
     });
 
-    // 0. 공유 Gemini API 키 동기화
     onSnapshot(configDocRef, (snap) => {
       if (snap.exists()) {
         sharedGeminiApiKey = snap.data().geminiApiKey || "";
@@ -464,7 +450,6 @@
       alert("AI API 키가 저장되었습니다. 이제 모든 직원이 진단기 사진에서 고장코드를 자동 추출할 수 있습니다.");
     };
 
-    // 1. 직원 계정 실시간 동기화 및 초기 관리자(admin / 1234) 자동 세팅
     onSnapshot(usersCol, async (snapshot) => {
       staffUsers = snapshot.docs.map(d => d.data());
       if (staffUsers.length === 0) {
@@ -528,7 +513,6 @@
       document.getElementById("loginOverlay").classList.remove("hidden");
     };
 
-    // 관리자 계정 관리 모달
     window.openUserModal = () => {
       if (!isAdmin()) return;
       resetUserForm();
@@ -599,7 +583,6 @@
       }).join("");
     }
 
-    // 2. 수리 사례 실시간 동기화 리스너
     const q = query(casesCol, orderBy("updatedAt", "desc"));
     onSnapshot(q, (snapshot) => {
       cases = snapshot.docs.map(d => d.data());
@@ -787,7 +770,6 @@
       `;
     };
 
-    // --- 사진/클립보드로 고장코드(DTC) 자동 추출 기능 ---
     window.openDtcOcrModal = () => {
       if (!canEdit()) return;
       if (!sharedGeminiApiKey) {
@@ -929,7 +911,6 @@
       await persistCase(c);
     };
 
-    // --- 차량 및 해결 과정 CRUD ---
     window.openNewCaseModal = () => {
       if (!canEdit()) return;
       editingCaseId = null;
