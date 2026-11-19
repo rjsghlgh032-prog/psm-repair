@@ -141,7 +141,7 @@
       </div>
       <div class="space-y-3 text-xs">
         <p class="text-slate-600 leading-relaxed">
-          진단기 화면 사진을 찍어 고장코드와 내용을 자동 분리하려면 <strong>Google Gemini API 키</strong>를 한 번만 등록해 주세요. (모든 직원 기기에 자동 공유됩니다.)
+          진단기 화면 사진을 찍거나 캡처해 붙여넣어 고장코드와 내용을 자동 분리하려면 <strong>Google Gemini API 키</strong>를 한 번만 등록해 주세요. (모든 직원 기기에 자동 공유됩니다.)
         </p>
         <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-[11px] text-slate-600 space-y-1">
           <div class="font-bold text-slate-800">무료 API 키 발급 방법:</div>
@@ -166,13 +166,13 @@
       <div class="flex justify-between items-center mb-3 pb-2 border-b border-slate-200">
         <div>
           <h2 class="text-base font-black text-slate-900"><i class="fa-solid fa-camera text-blue-600 mr-1.5"></i>사진에서 고장코드 자동 추출</h2>
-          <p class="text-xs text-slate-500">진단기 모니터나 스캔 리포트 사진을 올리면 코드명과 내용을 자동 분리합니다.</p>
+          <p class="text-xs text-slate-500">진단기 모니터를 찍거나 PC에서 캡처 후 <strong>Ctrl + V</strong>로 바로 붙여넣으세요.</p>
         </div>
         <button onclick="closeDtcOcrModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
 
       <!-- 촬영 / 앨범 선택 버튼 -->
-      <div class="flex gap-2 mb-3 text-xs">
+      <div class="flex gap-2 mb-2.5 text-xs">
         <label class="flex-1 bg-blue-600 hover:bg-blue-500 text-white rounded-xl py-2.5 px-3 text-center font-bold cursor-pointer shadow-sm">
           <i class="fa-solid fa-camera mr-1"></i> 진단기 화면 바로 촬영
           <input type="file" accept="image/*" capture="environment" onchange="processDtcImage(event)" class="hidden" />
@@ -181,6 +181,11 @@
           <i class="fa-solid fa-images mr-1"></i> 사진첩/캡처 선택
           <input type="file" accept="image/*" onchange="processDtcImage(event)" class="hidden" />
         </label>
+      </div>
+
+      <!-- PC 클립보드 붙여넣기 안내 영역 -->
+      <div class="mb-3 border-2 border-dashed border-indigo-200 bg-indigo-50/60 rounded-xl py-3 px-4 text-center text-xs text-indigo-800">
+        <i class="fa-solid fa-paste mr-1"></i> PC에서 화면 캡처(<strong>Win+Shift+S</strong>) 후 이 창에서 <strong>Ctrl + V</strong>를 누르면 즉시 추출됩니다.
       </div>
 
       <!-- 분석 중 로딩 표시 -->
@@ -343,7 +348,10 @@
           </label>
         </div>
         <div class="border-t border-slate-200 pt-3">
-          <label class="block font-semibold text-slate-700 mb-2">증빙 및 계측 사진 첨부 (자동 용량 최적화)</label>
+          <div class="flex justify-between items-center mb-2">
+            <label class="font-semibold text-slate-700">증빙 및 계측 사진 첨부</label>
+            <span class="text-[11px] font-bold text-blue-600"><i class="fa-solid fa-paste mr-0.5"></i>PC 캡처 후 Ctrl + V 가능</span>
+          </div>
           <div class="flex gap-2 mb-2">
             <label class="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl py-2.5 px-3 text-center font-bold cursor-pointer">
               <i class="fa-solid fa-camera mr-1"></i> 카메라 바로 촬영
@@ -406,6 +414,35 @@
       if (role === "edit") return "쓰기/수정";
       return "보기전용";
     }
+
+    // PC 클립보드(Ctrl + V) 이미지 붙여넣기 전역 리스너
+    window.addEventListener("paste", (e) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      const imageFiles = [];
+      for (const item of items) {
+        if (item.type.startsWith("image/")) {
+          const file = item.getAsFile();
+          if (file) imageFiles.push(file);
+        }
+      }
+      if (imageFiles.length === 0) return;
+
+      // 1) 고장코드(DTC) 자동 추출 모달이 열려 있는 경우
+      const dtcModalOpen = !document.getElementById("dtcOcrModal").classList.contains("hidden");
+      if (dtcModalOpen) {
+        e.preventDefault();
+        analyzeDtcImageFile(imageFiles[0]);
+        return;
+      }
+
+      // 2) 해결 과정 추가/수정 모달이 열려 있는 경우
+      const stepModalOpen = !document.getElementById("stepModal").classList.contains("hidden");
+      if (stepModalOpen) {
+        e.preventDefault();
+        appendCompressedStepPhotos(imageFiles);
+      }
+    });
 
     // 0. 공유 Gemini API 키 동기화
     onSnapshot(configDocRef, (snap) => {
@@ -734,7 +771,7 @@
             ${editable ? `
             <div class="flex items-center gap-2">
               <button onclick="openDtcOcrModal()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold px-2.5 py-1 rounded-lg flex items-center gap-1">
-                <i class="fa-solid fa-camera"></i> 사진으로 코드 추출
+                <i class="fa-solid fa-camera"></i> 사진/캡처로 코드 추출
               </button>
               <button onclick="addDtcPrompt()" class="text-xs font-bold text-blue-600 hover:underline">+ 수동 추가</button>
             </div>` : ""}
@@ -752,7 +789,7 @@
       `;
     };
 
-    // --- 사진으로 고장코드(DTC) 자동 추출 기능 ---
+    // --- 사진/클립보드로 고장코드(DTC) 자동 추출 기능 ---
     window.openDtcOcrModal = () => {
       if (!canEdit()) return;
       if (!sharedGeminiApiKey) {
@@ -775,6 +812,11 @@
     window.processDtcImage = (e) => {
       const file = e.target.files?.[0];
       if (!file) return;
+      analyzeDtcImageFile(file);
+      e.target.value = "";
+    };
+
+    function analyzeDtcImageFile(file) {
       document.getElementById("dtcOcrLoading").classList.remove("hidden");
       document.getElementById("dtcOcrResultArea").classList.add("hidden");
 
@@ -820,7 +862,7 @@
             const parsed = JSON.parse(rawText);
 
             if (!Array.isArray(parsed) || parsed.length === 0) {
-              alert("사진에서 고장코드를 찾지 못했습니다. 글자가 선명하게 보이도록 다시 촬영해 주세요.");
+              alert("이미지에서 고장코드를 찾지 못했습니다. 글자가 선명하게 보이도록 다시 캡처하거나 촬영해 주세요.");
               document.getElementById("dtcOcrLoading").classList.add("hidden");
               return;
             }
@@ -837,14 +879,13 @@
           } catch (err) {
             console.error(err);
             document.getElementById("dtcOcrLoading").classList.add("hidden");
-            alert("사진 분석 중 오류가 발생했습니다: " + err.message);
+            alert("이미지 분석 중 오류가 발생했습니다: " + err.message);
           }
         };
         img.src = ev.target.result;
       };
       reader.readAsDataURL(file);
-      e.target.value = "";
-    };
+    }
 
     function renderExtractedDtcList() {
       const container = document.getElementById("extractedDtcList");
@@ -1006,6 +1047,11 @@
 
     window.handleImageUpload = (e) => {
       const files = Array.from(e.target.files || []);
+      appendCompressedStepPhotos(files);
+      e.target.value = "";
+    };
+
+    function appendCompressedStepPhotos(files) {
       files.forEach(file => {
         const reader = new FileReader();
         reader.onload = (ev) => {
@@ -1024,7 +1070,7 @@
         };
         reader.readAsDataURL(file);
       });
-    };
+    }
 
     function renderStepPhotoPreview() {
       document.getElementById("stepPhotoPreview").innerHTML = tempStepPhotos.map((src, i) => `
