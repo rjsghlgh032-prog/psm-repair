@@ -1,0 +1,16 @@
+{
+  "name": "난제인 차량 수리 문제 해결 과정",
+  "short_name": "PSM 수리일지",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
