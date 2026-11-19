@@ -428,7 +428,6 @@
       }
       if (imageFiles.length === 0) return;
 
-      // 1) 고장코드(DTC) 자동 추출 모달이 열려 있는 경우
       const dtcModalOpen = !document.getElementById("dtcOcrModal").classList.contains("hidden");
       if (dtcModalOpen) {
         e.preventDefault();
@@ -436,7 +435,6 @@
         return;
       }
 
-      // 2) 해결 과정 추가/수정 모달이 열려 있는 경우
       const stepModalOpen = !document.getElementById("stepModal").classList.contains("hidden");
       if (stepModalOpen) {
         e.preventDefault();
@@ -835,28 +833,39 @@
           try {
             const promptText = `당신은 포르쉐 및 수입차 전문 정비 진단기(PIWIS 3, PIWIS 4 등) 스캔 화면 분석기입니다.
 첨부된 진단기 화면 사진에서 모든 고장코드(DTC)와 그 고장코드의 설명(내용)을 정확히 추출하세요.
-제어유닛 이름(예: DME, PSM, BCM 등)이 보이면 설명 앞에 [제어유닛] 형태로 함께 적어주세요.
+제어유닛 이름(예: DME, PSM, BCM, ACC4, ZFAS, J519, PTM 등)이 보이면 설명 앞에 [제어유닛] 형태로 함께 적어주세요.
 반드시 아래 JSON 배열 형식으로만 응답하고 다른 설명은 적지 마세요:
 [{"code": "고장코드명", "desc": "고장코드 내용 설명"}]`;
 
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${sharedGeminiApiKey}`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                contents: [{
-                  parts: [
-                    { text: promptText },
-                    { inline_data: { mime_type: "image/jpeg", data: base64Data } }
-                  ]
-                }],
-                generationConfig: {
-                  response_mime_type: "application/json"
-                }
-              })
-            });
+            const candidateModels = ["gemini-3.8-flash", "gemini-2.5-flash"];
+            let json = null;
+            let lastError = "";
 
-            const json = await res.json();
-            if (json.error) throw new Error(json.error.message || "API 호출 오류");
+            for (const modelName of candidateModels) {
+              const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${sharedGeminiApiKey}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  contents: [{
+                    parts: [
+                      { text: promptText },
+                      { inline_data: { mime_type: "image/jpeg", data: base64Data } }
+                    ]
+                  }],
+                  generationConfig: {
+                    response_mime_type: "application/json"
+                  }
+                })
+              });
+              const data = await res.json();
+              if (!data.error) {
+                json = data;
+                break;
+              }
+              lastError = data.error.message || "API 호출 오류";
+            }
+
+            if (!json) throw new Error(lastError);
 
             const rawText = json.candidates?.[0]?.content?.parts?.[0]?.text || "[]";
             const parsed = JSON.parse(rawText);
