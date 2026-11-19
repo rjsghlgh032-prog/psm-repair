@@ -824,44 +824,28 @@
 
           try {
             const promptText = `진단기 스캔 화면에서 고장코드(code)와 설명(desc)을 JSON 배열로만 추출하세요. 제어유닛명이 있으면 desc 앞에 [제어유닛]을 붙이세요. 형식: [{"code":"","desc":""}]`;
-            const candidateModels = ["gemini-2.5-flash", "gemini-2.0-flash"];
-            let json = null;
-            let lastError = "";
-
-            for (const modelName of candidateModels) {
-              try {
-                const res = await fetchWithTimeout(
-                  `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${sharedGeminiApiKey}`,
-                  {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      contents: [{
-                        parts: [
-                          { text: promptText },
-                          { inline_data: { mime_type: "image/jpeg", data: base64Data } }
-                        ]
-                      }],
-                      generationConfig: {
-                        response_mime_type: "application/json",
-                        temperature: 0.1
-                      }
-                    })
-                  },
-                  15000
-                );
-                const data = await res.json();
-                if (!data.error) {
-                  json = data;
-                  break;
-                }
-                lastError = data.error.message || "API 호출 오류";
-              } catch (modelErr) {
-                lastError = modelErr.name === "AbortError" ? "응답 시간 초과(15초)" : modelErr.message;
-              }
-            }
-
-            if (!json) throw new Error(lastError || "분석 실패");
+            const res = await fetchWithTimeout(
+              `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${sharedGeminiApiKey}`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  contents: [{
+                    parts: [
+                      { text: promptText },
+                      { inline_data: { mime_type: "image/jpeg", data: base64Data } }
+                    ]
+                  }],
+                  generationConfig: {
+                    response_mime_type: "application/json",
+                    temperature: 0.1
+                  }
+                })
+              },
+              15000
+            );
+            const json = await res.json();
+            if (json.error) throw new Error(json.error.message || "API 호출 오류");
 
             const rawText = json.candidates?.[0]?.content?.parts?.[0]?.text || "[]";
             const parsed = JSON.parse(rawText);
@@ -884,7 +868,8 @@
           } catch (err) {
             console.error(err);
             document.getElementById("dtcOcrLoading").classList.add("hidden");
-            alert("이미지 분석 중 오류가 발생했습니다: " + err.message);
+            const msg = err.name === "AbortError" ? "응답 시간 초과(15초)" : err.message;
+            alert("이미지 분석 중 오류가 발생했습니다: " + msg);
           }
         };
         img.src = ev.target.result;
