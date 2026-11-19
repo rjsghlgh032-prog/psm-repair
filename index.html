@@ -796,6 +796,16 @@
       e.target.value = "";
     };
 
+    async function fetchWithTimeout(url, options, timeoutMs = 15000) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        return await fetch(url, { ...options, signal: controller.signal });
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
     function analyzeDtcImageFile(file) {
       document.getElementById("dtcOcrLoading").classList.remove("hidden");
       document.getElementById("dtcOcrResultArea").classList.add("hidden");
@@ -805,49 +815,53 @@
         const img = new Image();
         img.onload = async () => {
           const canvas = document.createElement("canvas");
-          const maxW = 1400;
+          const maxW = 1024;
           const scale = img.width > maxW ? maxW / img.width : 1;
           canvas.width = img.width * scale;
           canvas.height = img.height * scale;
           canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
-          const base64Data = canvas.toDataURL("image/jpeg", 0.85).split(",")[1];
+          const base64Data = canvas.toDataURL("image/jpeg", 0.72).split(",")[1];
 
           try {
-            const promptText = `당신은 포르쉐 및 수입차 전문 정비 진단기(PIWIS 3, PIWIS 4 등) 스캔 화면 분석기입니다.
-첨부된 진단기 화면 사진에서 모든 고장코드(DTC)와 그 고장코드의 설명(내용)을 정확히 추출하세요.
-제어유닛 이름(예: DME, PSM, BCM, ACC4, ZFAS, J519, PTM 등)이 보이면 설명 앞에 [제어유닛] 형태로 함께 적어주세요.
-반드시 아래 JSON 배열 형식으로만 응답하고 다른 설명은 적지 마세요:
-[{"code": "고장코드명", "desc": "고장코드 내용 설명"}]`;
-
-            const candidateModels = ["gemini-3.8-flash", "gemini-2.5-flash"];
+            const promptText = `진단기 스캔 화면에서 고장코드(code)와 설명(desc)을 JSON 배열로만 추출하세요. 제어유닛명이 있으면 desc 앞에 [제어유닛]을 붙이세요. 형식: [{"code":"","desc":""}]`;
+            const candidateModels = ["gemini-2.5-flash", "gemini-2.0-flash"];
             let json = null;
             let lastError = "";
 
             for (const modelName of candidateModels) {
-              const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${sharedGeminiApiKey}`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  contents: [{
-                    parts: [
-                      { text: promptText },
-                      { inline_data: { mime_type: "image/jpeg", data: base64Data } }
-                    ]
-                  }],
-                  generationConfig: {
-                    response_mime_type: "application/json"
-                  }
-                })
-              });
-              const data = await res.json();
-              if (!data.error) {
-                json = data;
-                break;
+              try {
+                const res = await fetchWithTimeout(
+                  `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${sharedGeminiApiKey}`,
+                  {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      contents: [{
+                        parts: [
+                          { text: promptText },
+                          { inline_data: { mime_type: "image/jpeg", data: base64Data } }
+                        ]
+                      }],
+                      generationConfig: {
+                        response_mime_type: "application/json",
+                        temperature: 0.1
+                      }
+                    })
+                  },
+                  15000
+                );
+                const data = await res.json();
+                if (!data.error) {
+                  json = data;
+                  break;
+                }
+                lastError = data.error.message || "API 호출 오류";
+              } catch (modelErr) {
+                lastError = modelErr.name === "AbortError" ? "응답 시간 초과(15초)" : modelErr.message;
               }
-              lastError = data.error.message || "API 호출 오류";
             }
 
-            if (!json) throw new Error(lastError);
+            if (!json) throw new Error(lastError || "분석 실패");
 
             const rawText = json.candidates?.[0]?.content?.parts?.[0]?.text || "[]";
             const parsed = JSON.parse(rawText);
